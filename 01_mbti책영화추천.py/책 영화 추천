@@ -1,0 +1,49 @@
+import streamlit as st
+
+def get_recommendations(mbti):
+    rec = {
+        "INTJ": {
+            "books": [
+                ("아몬드", "손원평", "감정과 자아에 깊이 천착하는 이야기로 INTJ들의 내면 탐험에 좋아요."),
+                ("체리새우: 비밀글입니다", "황영미", "관계의 뒤편을 관찰하는 시선이 INTJ의 분석적 태도에 잘 맞아요.")
+            ],
+            "movies": [
+                ("인셉션", "꿈과 현실의 경계를 분석하는 스토리로 INTJ 감성 저격!"),
+                ("셜록 홈즈", "논리와 퍼즐을 풀어가는 흐름이 INTJ에게 즐거운 도전이 돼요.")
+            ]
+        },
+        "ENTP": {
+            "books": [
+                ("세계를 건너 너에게 갈게", "이꽃님", "새로운 연결과 가능성에 열려 있는 ENTP에게 추천!"),
+                ("아몬드", "손원평", "감정과 논리를 동시에 다루는 구조라 ENTP의 폭넓은 관심을 자극해요.")
+            ],
+            "movies": [
+                ("매트릭스", "현실과 가상의 경계를 뒤흔드는 스토리! ENTP의 호기심 뿜뿜"),
+                ("어벤져스: 인피니티 워", "아이디어와 전략이 부딪히는 대형 스토리, ENTP가 좋아할 액션 + 두뇌플레이")
+            ]
+        },
+        # … 여기에 나머지 MBTI 유형들도 동일한 구조로 넣어줘 …
+    }
+    return rec.get(mbti, {"books": [], "movies": []})
+
+def main():
+    st.title("🎬📚 MBTI별 책 & 영화 추천기")
+    st.write("너의 MBTI 유형을 골라봐! 그에 맞는 책 2권 + 영화 2개 추천해줄게~")
+    mbti = st.selectbox("MBTI 선택", ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP", "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"])
+    if st.button("추천 받기"):
+        rec = get_recommendations(mbti)
+        if rec["books"]:
+            st.subheader("📖 책 추천")
+            for title, author, reason in rec["books"]:
+                st.write(f"• **{title}** ({author}) — {reason}")
+        else:
+            st.write("아직 이 유형에 대한 추천이 준비되지 않았어요 😢")
+        st.subheader("🎬 영화 추천")
+        if rec["movies"]:
+            for title, reason in rec["movies"]:
+                st.write(f"• **{title}** — {reason}")
+        else:
+            st.write("아직 이 유형에 대한 추천이 준비되지 않았어요 😢")
+
+if __name__ == "__main__":
+    main()
