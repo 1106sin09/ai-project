@@ -1,1 +1,96 @@
+# streamlit_mbti_app.py
+# Streamlit app that shows MBTI distribution by country using Plotly
+# Save this file as app.py for Streamlit Cloud.
+# This file offers a sample dataset and also accepts a user-uploaded CSV.
+# Expected CSV format (if you upload): Country,MBTI,Count
+
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import colorsys
+
+st.set_page_config(page_title="MBTI by Country", layout="wide")
+
+st.title("국가별 MBTI 비율 시각화 📊")
+st.markdown("선택한 국가의 MBTI 분포를 깔끔하고 인터랙티브한 막대그래프로 보여줍니다.")
+
+# --- Sample data (so the app works without upload) ---
+SAMPLE = pd.DataFrame([
+    ["South Korea","INTJ", 120], ["South Korea","INFP", 95], ["South Korea","ENTP", 75],
+    ["South Korea","ESFJ", 60], ["South Korea","ISTJ", 50], ["South Korea","ENFP", 45],
+    ["United States","INTJ", 110], ["United States","INFP", 140], ["United States","ENTP", 130],
+    ["United States","ESFJ", 85], ["United States","ISTJ", 90], ["United States","ENFP", 70],
+    ["Japan","INTJ", 80], ["Japan","INFP", 60], ["Japan","ENTP", 55], ["Japan","ESFJ", 95],
+    ["Japan","ISTJ", 120], ["Japan","ENFP", 40]
+], columns=["Country","MBTI","Count"])
+
+st.sidebar.header("데이터 옵션")
+uploaded = st.sidebar.file_uploader("CSV 파일 업로드 (Country,MBTI,Count)", type=["csv"]) 
+use_sample = st.sidebar.checkbox("샘플 데이터 사용 (업로드된 파일 있더라도)", value=True)
+
+if uploaded is not None and not use_sample:
+    try:
+        df = pd.read_csv(uploaded)
+        if not set(["Country","MBTI","Count"]).issubset(df.columns):
+            st.error("CSV에 'Country', 'MBTI', 'Count' 컬럼이 있어야 합니다.")
+            st.stop()
+    except Exception as e:
+        st.error(f"파일을 읽는 중 오류: {e}")
+        st.stop()
+else:
+    df = SAMPLE.copy()
+
+# Ensure types
+df = df.copy()
+if df['Count'].dtype.kind not in 'iufc':
+    df['Count'] = pd.to_numeric(df['Count'], errors='coerce').fillna(0)
+
+countries = sorted(df['Country'].unique())
+country = st.selectbox("국가 선택", countries)
+
+# Filter and compute percentages
+sub = df[df['Country'] == country].groupby('MBTI', as_index=False)['Count'].sum()
+sub = sub.sort_values('Count', ascending=False).reset_index(drop=True)
+sub['Percent'] = (sub['Count'] / sub['Count'].sum() * 100).round(2)
+
+# Color logic: 1st = red, rest = blue gradient (진해 -> 옅음)
+def hls_to_hex(h, l, s):
+    r, g, b = colorsys.hls_to_rgb(h, l, s)
+    return '#{:02x}{:02x}{:02x}'.format(int(r*255), int(g*255), int(b*255))
+
+colors = []
+if len(sub) > 0:
+    colors.append('#e63946')  # red for 1st
+    n = max(len(sub)-1, 1)
+    # generate blue shades from darker to lighter
+    for i in range(n):
+        t = i / max(n-1, 1)
+        # hue for blue ~0.6, vary lightness from 0.35 -> 0.75
+        l = 0.35 + 0.4 * (1 - t)  # darker for smaller i
+        s = 0.6
+        colors.append(hls_to_hex(0.6, l, s))
+
+# Plotly bar
+fig = px.bar(sub, x='MBTI', y='Percent', text='Percent', title=f"{country}의 MBTI 비율 (상위부터)")
+# apply colors in order of bars (sorted by Count desc so first is red)
+fig.update_traces(marker_color=colors, hovertemplate='<b>%{x}</b><br>비율: %{y}%<br>원수: %{customdata}', customdata=sub['Count'])
+fig.update_layout(yaxis_title='비율 (%)', xaxis_title='MBTI', uniformtext_minsize=8, uniformtext_mode='hide')
+fig.update_traces(textposition='outside')
+
+st.plotly_chart(fig, use_container_width=True)
+
+# Show table and small explanation
+with st.expander("데이터 표 보기 / 설명 열기"):
+    st.dataframe(sub)
+    st.markdown("---")
+    st.markdown(
+        "**설명**: 상단 막대는 해당 국가에서 가장 비율이 높은 MBTI 유형입니다.\n"
+        "빨간색은 1위 유형을 강조하고, 나머지는 파란색 계열의 옅어지는 그라데이션으로 표시됩니다."
+    )
+
+st.markdown("---")
+st.markdown("**사용 팁**: CSV 업로드 후 사이드바에서 '샘플 데이터 사용' 체크를 해제하면 업로드한 데이터로 시각화됩니다.")
+
+# Small footer
+st.caption("앱 개발자: ChatGPT · 필요한 추가 기능(정렬 방식, 색상 변경 등) 요청해주세요 🙂")
 
