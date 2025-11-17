@@ -31,7 +31,7 @@ def main():
     st.markdown("특정 날짜와 노선을 선택하여 해당 조건에서 이용객(승차 + 하차)이 가장 많은 상위 10개 역을 시각화합니다.")
 
     # 파일 경로: 사용자가 업로드한 정확한 파일명으로 지정
-    file_path = "subway.1csv.csv"
+    file_path = "subway.csv"
     data = load_data(file_path) # 데이터 로드
 
     # 2. 사용자 입력 위젯 설정
