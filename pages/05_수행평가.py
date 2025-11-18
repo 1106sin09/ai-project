@@ -13,23 +13,26 @@ st.set_page_config(
 
 DATA_FILE_PATH = "chicken.csv" 
 
-# --- 1. 데이터 로드 함수 (Streamlit Caching 적용) ---
+# --- 1. 데이터 로드 함수 (Streamlit Caching 적용 및 인코딩 수정) ---
 @st.cache_data
 def load_data(file_path):
     """
     CSV 파일을 로드하고 필요한 전처리를 수행합니다.
+    **'cp949' 인코딩을 사용하여 한글 오류를 해결합니다.**
     """
     if not os.path.exists(file_path):
-        # 파일이 없을 경우 오류 메시지 출력 후 None 반환
         st.error(f"데이터 파일 '{file_path}'을(를) 찾을 수 없습니다. app.py와 함께 파일을 업로드했는지 확인해주세요.")
         return None
         
     try:
-        df = pd.read_csv(file_path)
+        # 인코딩 옵션 추가: encoding='cp949'
+        df = pd.read_csv(file_path, encoding='cp949')
         df['전체_건수'] = pd.to_numeric(df['전체_건수'], errors='coerce').fillna(0).astype(int)
         return df
     except Exception as e:
+        # cp949 인코딩으로도 실패하면, 인코딩 문제 재안내
         st.error(f"데이터 로드 및 처리 중 오류 발생: {e}")
+        st.info("CSV 파일이 'cp949' 인코딩으로도 읽히지 않습니다. 파일을 'UTF-8'로 변환 후 다시 시도해보세요.")
         return None
 
 # --- 2. 데이터 처리 및 분석 함수 ---
@@ -45,7 +48,6 @@ def analyze_top_stations(df):
     station_analysis = pd.merge(ride_counts, drop_counts, on='대여소명', how='outer').fillna(0)
     station_analysis['총_승하차_건수'] = station_analysis['승차_건수'].astype(int) + station_analysis['하차_건수'].astype(int)
     
-    # 상위 10개 추출
     top_10_stations = station_analysis.sort_values(
         by='총_승하차_건수', ascending=False
     ).head(10).reset_index(drop=True)
@@ -57,8 +59,6 @@ def create_plotly_bar_chart(df_top10):
     df_top10 = df_top10.copy()
     df_top10['순위'] = df_top10.index
     
-    # 1등은 빨간색 (#FF0000)
-    # 2등부터는 파란색 계열 그라데이션 (Plotly Blues_r 역순)
     blue_colors = px.colors.sequential.Blues_r[1:] 
     color_list = ['#FF0000'] + blue_colors[:9]
     df_top10['color'] = df_top10['순위'].apply(lambda x: color_list[x])
