@@ -25,7 +25,6 @@ def load_data(file_path):
         return None
         
     try:
-        # 데이터 파일 인코딩 옵션 추가: encoding='cp949'
         df = pd.read_csv(file_path, encoding='cp949')
         df['전체_건수'] = pd.to_numeric(df['전체_건수'], errors='coerce').fillna(0).astype(int)
         return df
@@ -69,7 +68,6 @@ def create_plotly_bar_chart(df_top10):
         blue_colors_gradient = px.colors.sequential.Blues[:num_blues_needed] 
         color_list.extend(blue_colors_gradient)
         
-    # List comprehension으로 안전하게 색상 할당 (IndexError 방지)
     df_top10['color'] = [color_list[i] for i in range(N)] 
     df_top10['순위'] = df_top10.index
 
@@ -119,6 +117,7 @@ def main():
         st.plotly_chart(fig, use_container_width=True)
 
         st.subheader("💡 상세 데이터 테이블 (상위 10개)")
+        # [최종 수정]: '순위'와 'color' 컬럼은 top_10_stations에 없으므로 drop() 호출을 제거합니다.
         st.dataframe(
             top_10_stations.rename(
                 columns={
@@ -127,7 +126,7 @@ def main():
                     '하차_건수': '도착(하차) 건수', 
                     '총_승하차_건수': '총 합계'
                 }
-            ).drop(columns=['순위', 'color']),
+            ), # .drop(columns=['순위', 'color']) 제거됨
             use_container_width=True
         )
 
